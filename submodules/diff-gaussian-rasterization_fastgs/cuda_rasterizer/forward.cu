@@ -77,7 +77,7 @@
  }
  
  // Forward version of 2D covariance matrix computation
- __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y, float tan_fovx, float tan_fovy, const float* cov3D, const float* viewmatrix)
+ __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y, float tan_fovx, float tan_fovy, const float* cov3D, const float* viewmatrix, float eps2d)
  {
 	 // The following models the steps outlined by equations 29
 	 // and 31 in "EWA Splatting" (Zwicker et al., 2002). 
@@ -113,8 +113,8 @@
  
 	 // Apply low-pass filter: every Gaussian should be at least
 	 // one pixel wide/high. Discard 3rd row and column.
-	 cov[0][0] += 0.3f;
-	 cov[1][1] += 0.3f;
+	 cov[0][0] += eps2d;
+	 cov[1][1] += eps2d;
 	 return { float(cov[0][0]), float(cov[0][1]), float(cov[1][1]) };
  }
  
@@ -175,6 +175,8 @@
 	 const float* projmatrix,
 	 const glm::vec3* cam_pos,
 	 const float mult,
+	 const float eps2d,
+	 const float near_plane,
 	 const int W, int H,
 	 const float tan_fovx, float tan_fovy,
 	 const float focal_x, float focal_y,
@@ -199,7 +201,7 @@
  
 	 // Perform near culling, quit if outside.
 	 float3 p_view;
-	 if (!in_frustum(idx, orig_points, viewmatrix, projmatrix, prefiltered, p_view))
+	 if (!in_frustum(idx, orig_points, viewmatrix, projmatrix, prefiltered, p_view, near_plane))
 		 return;
  
 	 // Transform point by projecting
@@ -222,7 +224,7 @@
 	 }
  
 	 // Compute 2D screen-space covariance matrix
-	 float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix);
+	 float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, eps2d);
  
 	 // Invert covariance (EWA algorithm)
 	 float det = (cov.x * cov.z - cov.y * cov.y);
@@ -601,6 +603,8 @@ renderCUDA(
 	 const float* projmatrix,
 	 const glm::vec3* cam_pos,
 	 const float mult,
+	 const float eps2d,
+	 const float near_plane,
 	 const int W, int H,
 	 const float focal_x, float focal_y,
 	 const float tan_fovx, float tan_fovy,
@@ -630,6 +634,8 @@ renderCUDA(
 		 projmatrix,
 		 cam_pos,
 		 mult,
+		 eps2d,
+		 near_plane,
 		 W, H,
 		 tan_fovx, tan_fovy,
 		 focal_x, focal_y,

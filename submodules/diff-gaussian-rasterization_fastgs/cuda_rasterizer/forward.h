@@ -38,6 +38,8 @@ namespace FORWARD
 		const float* projmatrix,
 		const glm::vec3* cam_pos,
         const float mult,
+		const float eps2d,
+		const float near_plane,
 		const int W, int H,
 		const float focal_x, float focal_y,
 		const float tan_fovx, float tan_fovy,

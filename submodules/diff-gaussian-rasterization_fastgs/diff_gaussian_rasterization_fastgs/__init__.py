@@ -85,6 +85,8 @@ class _RasterizeGaussians(torch.autograd.Function):
             raster_settings.sh_degree,
             raster_settings.campos,
             raster_settings.mult,
+            raster_settings.eps2d,
+            raster_settings.near_plane,
             raster_settings.prefiltered,
             raster_settings.debug,
             get_flag,
@@ -137,6 +139,7 @@ class _RasterizeGaussians(torch.autograd.Function):
                 sh, 
                 raster_settings.sh_degree, 
                 raster_settings.campos,
+                raster_settings.eps2d,
                 geomBuffer,
                 num_rendered,
                 binningBuffer,
@@ -189,6 +192,10 @@ class GaussianRasterizationSettings(NamedTuple):
     get_flag : bool
     metric_map : torch.Tensor
     gt_image: torch.Tensor
+    # Added to the 2D covariance's diagonal (the low-pass filter), forward and backward
+    eps2d : float = 0.3
+    # Gaussians with view-space depth at or below this are culled
+    near_plane : float = 0.2
 
 class GaussianRasterizer(nn.Module):
     def __init__(self, raster_settings):
